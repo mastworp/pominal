@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ipc/protocol.hpp"
+#include "protocol.hpp"
 #include <optional>
 #include <string>
 #include <vector>

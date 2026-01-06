@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../ipc/protocol.hpp"
-#include "../utils/types.hpp"
+#include "protocol.hpp"
+#include "types.hpp"
 #include <string>
 
 namespace pominal::notification {

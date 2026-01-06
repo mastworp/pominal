@@ -1,7 +1,7 @@
 #include "daemon.hpp"
 #include "service.hpp"
-#include "../ipc/protocol.hpp"
-#include "../ipc/socket.hpp"
+#include "protocol.hpp"
+#include "socket.hpp"
 #include <csignal>
 #include <cstdlib>
 #include <fcntl.h>

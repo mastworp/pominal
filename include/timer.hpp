@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../utils/types.hpp"
+#include "types.hpp"
 #include <atomic>
 #include <chrono>
 #include <condition_variable>

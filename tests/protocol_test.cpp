@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "src/ipc/protocol.hpp"
+#include "protocol.hpp"
 
 using namespace pominal;
 using namespace pominal::ipc;

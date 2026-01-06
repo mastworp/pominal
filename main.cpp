@@ -1,8 +1,8 @@
-#include "src/cli/client.hpp"
-#include "src/cli/parser.hpp"
-#include "src/daemon/daemon.hpp"
-#include "src/daemon/service.hpp"
-#include "src/notification/display.hpp"
+#include "client.hpp"
+#include "parser.hpp"
+#include "daemon.hpp"
+#include "service.hpp"
+#include "display.hpp"
 #include <iostream>
 
 auto main(const int argc, char* argv[]) -> int {

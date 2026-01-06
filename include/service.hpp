@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../timer/timer.hpp"
+#include "timer.hpp"
 #include <atomic>
 
 namespace pominal::daemon {

@@ -1,8 +1,8 @@
 #include "service.hpp"
-#include "../command/factory.hpp"
-#include "../ipc/protocol.hpp"
-#include "../ipc/socket.hpp"
-#include "../notification/sound.hpp"
+#include "factory.hpp"
+#include "protocol.hpp"
+#include "socket.hpp"
+#include "sound.hpp"
 #include <fstream>
 #include <unistd.h>
 

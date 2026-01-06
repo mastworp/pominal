@@ -14,7 +14,7 @@ A terminal-based Pomodoro timer service written in modern C++23.
 ## Requirements
 
 - macOS or Linux
-- CMake 4.1+
+- CMake 3.20+
 - C++23 compatible compiler (Apple Clang 17+ or GCC 13+)
 - Ninja (recommended) or Make
 
@@ -107,7 +107,7 @@ The daemon persists across terminal sessions - control it from any terminal wind
 
 ### Entry Point: `main.cpp`
 
-Everything starts in `main.cpp:7`. The flow is:
+Everything starts in `main.cpp:8`. The flow is:
 
 1. Parse CLI arguments → `parsed_args` struct
 2. Handle special modes (help, stop-daemon, foreground, daemon)
@@ -117,19 +117,41 @@ Everything starts in `main.cpp:7`. The flow is:
 ### Directory Structure
 
 ```
-src/
-├── cli/          # Command-line interface
-├── command/      # Command pattern implementation
-├── daemon/       # Background service & daemonization
-├── ipc/          # Inter-process communication
-├── notification/ # Display & sound output
-├── timer/        # Core Pomodoro timer logic
-└── utils/        # Shared types and enums
+pominal/
+├── include/           # All headers (flat)
+│   ├── types.hpp      # Shared types and enums
+│   ├── timer.hpp      # Core Pomodoro timer
+│   ├── protocol.hpp   # IPC request/response structures
+│   ├── socket.hpp     # Unix domain socket wrapper
+│   ├── command.hpp    # Command pattern interface
+│   ├── factory.hpp    # Command factory
+│   ├── sound.hpp      # Sound notifications
+│   ├── display.hpp    # Terminal display formatting
+│   ├── service.hpp    # Background service
+│   ├── daemon.hpp     # Daemonization logic
+│   ├── client.hpp     # CLI client
+│   └── parser.hpp     # Argument parser
+├── src/               # All sources (flat)
+│   ├── timer.cpp
+│   ├── socket.cpp
+│   ├── display.cpp
+│   ├── service.cpp
+│   ├── daemon.cpp
+│   ├── client.cpp
+│   └── parser.cpp
+├── tests/             # Unit tests
+│   ├── timer_test.cpp
+│   ├── protocol_test.cpp
+│   └── command_test.cpp
+├── main.cpp           # Entry point
+├── CMakeLists.txt
+├── CMakePresets.json
+└── README.md
 ```
 
 ### Core Components
 
-#### 1. Timer (`src/timer/timer.hpp`)
+#### 1. Timer (`include/timer.hpp`)
 
 The heart of the application:
 - State machine with states: `idle`, `focus`, `short_break`, `long_break`, `paused`
@@ -138,19 +160,19 @@ The heart of the application:
 - Thread-safe via mutex + condition variable
 - Callbacks for state changes, ticks, and 1-minute warnings
 
-#### 2. Command Pattern (`src/command/`)
+#### 2. Command Pattern (`include/command.hpp`, `include/factory.hpp`)
 
 - `command.hpp`: Abstract `command_interface` with `execute(timer&, args)` method
 - `factory.hpp`: `command_factory::create()` produces the right command for each `command_type`
 - Decouples command parsing from execution (Open/Closed Principle)
 
-#### 3. IPC Layer (`src/ipc/`)
+#### 3. IPC Layer (`include/protocol.hpp`, `include/socket.hpp`)
 
 - `protocol.hpp`: Defines `request` and `response` structures with serialization
-- `socket.hpp/cpp`: Unix domain socket at `/tmp/pominal.sock`
+- `socket.hpp`: Unix domain socket wrapper at `/tmp/pominal.sock`
 - Client sends serialized request → Server deserializes, executes, returns response
 
-#### 4. Daemon (`src/daemon/`)
+#### 4. Daemon (`include/daemon.hpp`, `include/service.hpp`)
 
 - `service.cpp`: Runs the main loop accepting client connections
 - `daemon.cpp`: Double-fork daemonization (classic Unix pattern)

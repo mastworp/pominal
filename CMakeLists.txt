@@ -5,45 +5,24 @@ project(pominal
     LANGUAGES CXX
 )
 
-# Options
 option(POMINAL_BUILD_TESTS "Build the test suite" ON)
 
-# Global settings
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Core library - compiled once, used by both executable and tests
-add_library(pominal_lib STATIC)
-
-target_sources(pominal_lib
-    PRIVATE
-        src/timer/timer.cpp
-        src/ipc/socket.cpp
-        src/notification/display.cpp
-        src/daemon/service.cpp
-        src/daemon/daemon.cpp
-        src/cli/client.cpp
-        src/cli/parser.cpp
-    PUBLIC
-        FILE_SET HEADERS
-        FILES
-            src/utils/types.hpp
-            src/timer/timer.hpp
-            src/ipc/protocol.hpp
-            src/ipc/socket.hpp
-            src/command/command.hpp
-            src/command/factory.hpp
-            src/notification/sound.hpp
-            src/notification/display.hpp
-            src/daemon/service.hpp
-            src/daemon/daemon.hpp
-            src/cli/client.hpp
-            src/cli/parser.hpp
+add_library(pominal_lib STATIC
+    src/timer.cpp
+    src/socket.cpp
+    src/display.cpp
+    src/service.cpp
+    src/daemon.cpp
+    src/client.cpp
+    src/parser.cpp
 )
 
-target_include_directories(pominal_lib PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(pominal_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 if(APPLE)
     target_compile_definitions(pominal_lib PUBLIC __APPLE__)
@@ -58,7 +37,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     )
 endif()
 
-# Main executable - just links to library
 add_executable(pominal main.cpp)
 target_link_libraries(pominal PRIVATE pominal_lib)
 
@@ -71,7 +49,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     )
 endif()
 
-# Tests (optional)
 if(POMINAL_BUILD_TESTS)
     include(FetchContent)
     FetchContent_Declare(

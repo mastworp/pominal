@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../ipc/protocol.hpp"
-#include "../timer/timer.hpp"
+#include "protocol.hpp"
+#include "timer.hpp"
 #include <vector>
 
 namespace pominal::command {

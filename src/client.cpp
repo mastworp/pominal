@@ -1,6 +1,6 @@
 #include "client.hpp"
-#include "../ipc/socket.hpp"
-#include "../notification/display.hpp"
+#include "socket.hpp"
+#include "display.hpp"
 
 namespace pominal::cli {
 
