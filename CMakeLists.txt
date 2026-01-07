@@ -40,6 +40,8 @@ endif()
 add_executable(pominal main.cpp)
 target_link_libraries(pominal PRIVATE pominal_lib)
 
+install(TARGETS pominal RUNTIME DESTINATION bin)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(pominal PRIVATE
         -Wall

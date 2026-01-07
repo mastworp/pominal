@@ -28,19 +28,21 @@ cmake --preset default
 cmake --build --preset default
 
 # Run tests
-./cmake-build-debug/pominal_tests
+./build/pominal_tests
 ```
 
 ## Installation
 
-Option 1: Copy to PATH
 ```bash
-sudo cp cmake-build-debug/pominal /usr/local/bin/
+# Build release and install to /usr/local/bin
+cmake --preset release
+cmake --build --preset release
+sudo cmake --install build
 ```
 
-Option 2: Add alias to `~/.zshrc` or `~/.bashrc`
+Or add an alias to `~/.zshrc` or `~/.bashrc`:
 ```bash
-alias pominal="/path/to/pominal/cmake-build-debug/pominal"
+alias pominal="/path/to/pominal/build/pominal"
 ```
 
 ## Usage
@@ -252,10 +254,10 @@ The timer uses the **monitor pattern**:
 
 ```bash
 # Run all tests
-./cmake-build-debug/pominal_tests
+./build/pominal_tests
 
 # Run specific test suite
-./cmake-build-debug/pominal_tests --gtest_filter="timer_test.*"
+./build/pominal_tests --gtest_filter="timer_test.*"
 ```
 
 Test suites:
