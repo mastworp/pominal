@@ -1,0 +1,21 @@
+name: pominal
+
+services:
+  dev:
+    build:
+      context: .
+      target: toolchain
+    image: pominal-toolchain
+    volumes:
+      - .:/workspace
+      - build:/workspace/build
+
+  pominal:
+    build:
+      context: .
+      target: runtime
+    image: pominal
+    init: true
+
+volumes:
+  build:
