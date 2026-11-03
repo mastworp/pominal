@@ -14,35 +14,67 @@ A terminal-based Pomodoro timer service written in modern C++23.
 ## Requirements
 
 - macOS or Linux
-- CMake 3.20+
+- CMake 3.25+
 - C++23 compatible compiler (Apple Clang 17+ or GCC 13+)
-- Ninja (recommended) or Make
+- Ninja
+- Optional: clang-format 22, cmake-format 0.6.13 and gcovr 8 for formatting and coverage (all included in the Docker toolchain)
 
 ## Building
 
+Every build is described by a preset in `CMakePresets.json`. Build trees are created in `build/<preset>`.
+
 ```bash
-# Configure (uses Apple Clang via CMakePresets.json)
-cmake --preset default
-
-# Build
-cmake --build --preset default
-
-# Run tests
-./build/pominal_tests
+cmake --workflow --preset debug      # configure, build and test a Debug build
+cmake --workflow --preset release    # configure, build and test a Release build
 ```
+
+The individual steps are available as well:
+
+```bash
+cmake --preset release
+cmake --build --preset release
+ctest --preset release
+```
+
+| Workflow preset | What it does |
+|-----------------|--------------|
+| `debug` | Debug build and tests |
+| `release` | Release build and tests |
+| `install` | Release build and tests, then installs into `~/.local` |
+| `coverage` | Instrumented build, tests, coverage report and minimum coverage check |
+| `package` | Static release build, tests and `.tar.gz`, `.deb` and `.rpm` packages (Linux only) |
+| `format` | Formats all C++ and CMake sources |
+| `format-check` | Fails when a source file is not formatted |
 
 ## Installation
 
 ```bash
-# Build release and install to /usr/local/bin
-cmake --preset release
-cmake --build --preset release
-sudo cmake --install build
+cmake --workflow --preset install                         # installs ~/.local/bin/pominal
+sudo cmake --install build/release --prefix /usr/local    # system-wide, after a release build
 ```
 
 Or add an alias to `~/.zshrc` or `~/.bashrc`:
 ```bash
-alias pominal="/path/to/pominal/build/pominal"
+alias pominal="/path/to/pominal/build/release/pominal"
+```
+
+### Linux packages
+
+Every `v*` tag publishes statically linked packages for x86_64 and aarch64 on the GitHub releases page. They have no runtime dependencies and install on any distribution:
+
+```bash
+sudo apt install ./pominal_1.0.0_amd64.deb                                         # Debian, Ubuntu
+sudo dnf install ./pominal-1.0.0-1.x86_64.rpm                                      # Fedora, RHEL, AlmaLinux
+sudo zypper install --allow-unsigned-rpm ./pominal-1.0.0-1.x86_64.rpm              # openSUSE
+sudo tar -xzf pominal-1.0.0-linux-x86_64.tar.gz -C /usr/local --strip-components=1 # any distribution
+```
+
+On aarch64 the files are named `pominal_1.0.0_arm64.deb`, `pominal-1.0.0-1.aarch64.rpm` and `pominal-1.0.0-linux-aarch64.tar.gz`. The packages are not signed, so on RPM 6 based systems such as Fedora 45 a plain `rpm -i` needs `--nosignature`.
+
+To build the packages yourself on any host with Docker:
+
+```bash
+docker buildx build --target artifacts --output type=local,dest=dist .
 ```
 
 ## Usage
@@ -145,9 +177,18 @@ pominal/
 │   ├── timer_test.cpp
 │   ├── protocol_test.cpp
 │   └── command_test.cpp
+├── cmake/             # CMake modules
+│   ├── Coverage.cmake # gcov instrumentation and gcovr report
+│   ├── Format.cmake   # format and format-check targets
+│   └── Packaging.cmake # CPack TGZ/DEB/RPM configuration
+├── .github/           # CI/CD pipeline and toolchain action
 ├── main.cpp           # Entry point
 ├── CMakeLists.txt
 ├── CMakePresets.json
+├── Dockerfile         # Fedora toolchain, build, artifacts and runtime stages
+├── docker-compose.yml
+├── .clang-format
+├── .cmake-format.yaml
 └── README.md
 ```
 
@@ -254,16 +295,86 @@ The timer uses the **monitor pattern**:
 
 ```bash
 # Run all tests
-./build/pominal_tests
+ctest --preset debug
 
 # Run specific test suite
-./build/pominal_tests --gtest_filter="timer_test.*"
+ctest --preset debug -R timer_test
+./build/debug/pominal_tests --gtest_filter="timer_test.*"
 ```
 
 Test suites:
 - `timer_test`: Timer state machine and transitions
 - `protocol_test`: IPC serialization/deserialization
 - `command_test`: Command pattern and factory
+- `cli.help`: Smoke test that runs the `pominal` executable
+
+## Code Coverage
+
+```bash
+cmake --workflow --preset coverage
+```
+
+The `coverage` preset instruments the library and tests with gcov and generates an HTML, Cobertura XML and Markdown report with gcovr in `build/coverage/coverage-report`. The build fails when line coverage drops below `POMINAL_COVERAGE_MIN_LINES` (default `40`), which CI enforces on every push and pull request. Raise it as tests are added:
+
+```bash
+cmake --preset coverage -DPOMINAL_COVERAGE_MIN_LINES=50
+```
+
+## Code Formatting
+
+C++ sources follow `.clang-format`, CMake files follow `.cmake-format.yaml`. CI checks formatting with clang-format 22.1.2 and cmake-format 0.6.13 (pinned in the `Dockerfile`).
+
+```bash
+cmake --workflow --preset format          # rewrite all sources
+cmake --workflow --preset format-check    # verify only
+```
+
+cmake-format does not run on Python 3.15 or newer, which is why the toolchain installs it into a Python 3.14 environment.
+
+## Docker
+
+The `Dockerfile` is based on Fedora 45 and has four targets:
+
+| Target | Contents |
+|--------|----------|
+| `toolchain` | GCC, CMake, Ninja, clang-format, cmake-format, gcovr and rpmbuild |
+| `build` | Builds, tests and packages the sources |
+| `artifacts` | Only the packages, for export with `--output` |
+| `runtime` | Fedora with the pominal RPM installed, running the service in the foreground |
+
+```bash
+docker compose run --rm dev                                        # shell in the toolchain, sources mounted at /workspace
+docker compose run --rm dev cmake --workflow --preset coverage     # run any preset on Fedora
+docker compose up -d pominal                                       # run the service in a container
+docker compose exec pominal pominal start
+docker compose exec pominal pominal status
+docker compose down
+```
+
+The `dev` service keeps its build trees in a named volume so they do not clash with host builds in `build/`.
+
+## CI/CD
+
+`.github/workflows/ci.yml` runs on pushes to `master`, pull requests and `v*` tags:
+
+| Job | Purpose |
+|-----|---------|
+| Format | `format-check` workflow in the Fedora toolchain |
+| Build & test (Fedora, GCC) | `release` workflow in the Fedora toolchain |
+| Build & test (macOS, Apple Clang) | `release` workflow on `macos-latest` |
+| Coverage | `coverage` workflow including the minimum coverage check, uploads the HTML report and adds a summary to the run |
+| Package | Builds the static packages from the `Dockerfile` on x86_64 and arm64 runners, checks the runtime image and uploads the packages |
+| Install on ... | Installs the packages on Debian, Ubuntu, Fedora, AlmaLinux, openSUSE and Alpine on both architectures, plus Arch Linux on x86_64, and runs a daemon round trip |
+| Release | On `v*` tags, checks that the tag matches the project version and publishes the packages of both architectures with `SHA256SUMS` as a GitHub release |
+
+The coverage report and package artifacts of each run are kept for 7 days. Released packages stay on the releases page.
+
+To publish a release, bump `VERSION` in `CMakeLists.txt`, then push a matching tag:
+
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
 
 ## License
 
