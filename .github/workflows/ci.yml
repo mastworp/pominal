@@ -1,0 +1,218 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/toolchain
+
+      - name: Check clang-format and cmake-format
+        run: docker run --rm -v "$PWD:/workspace" pominal-toolchain cmake --workflow --preset format-check
+
+  linux:
+    name: Build & test (Fedora, GCC)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/toolchain
+
+      - name: Build and test
+        run: docker run --rm -v "$PWD:/workspace" pominal-toolchain cmake --workflow --preset release
+
+  macos:
+    name: Build & test (macOS, Apple Clang)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build and test
+        run: cmake --workflow --preset release
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/toolchain
+
+      - name: Build, test and enforce minimum coverage
+        run: docker run --rm -v "$PWD:/workspace" pominal-toolchain cmake --workflow --preset coverage
+
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          if [ -f build/coverage/coverage-report/summary.md ]; then
+            cat build/coverage/coverage-report/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: build/coverage/coverage-report
+          retention-days: 7
+          if-no-files-found: ignore
+
+  package:
+    name: Package (${{ matrix.arch }})
+    needs:
+      - format
+      - linux
+      - coverage
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/toolchain
+
+      - name: Build static packages
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: artifacts
+          outputs: type=local,dest=dist
+
+      - name: Build runtime image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: runtime
+          tags: pominal:ci
+          load: true
+
+      - name: Run runtime image
+        run: docker run --rm pominal:ci --help
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: packages-${{ matrix.arch }}
+          path: dist/*
+          retention-days: 7
+          if-no-files-found: error
+
+  smoke-test:
+    name: Install on ${{ matrix.image }} (${{ matrix.arch }})
+    needs: package
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86_64
+          - aarch64
+        image:
+          - debian:13-slim
+          - ubuntu:22.04
+          - fedora:45
+          - almalinux:8
+          - opensuse/leap:15.6
+          - archlinux:latest
+          - alpine:3.22
+        exclude:
+          - arch: aarch64
+            image: archlinux:latest
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+          - image: debian:13-slim
+            install: dpkg -i /dist/*.deb
+          - image: ubuntu:22.04
+            install: dpkg -i /dist/*.deb
+          - image: fedora:45
+            install: dnf install -y /dist/*.rpm
+          - image: almalinux:8
+            install: rpm -i /dist/*.rpm
+          - image: opensuse/leap:15.6
+            install: rpm -i /dist/*.rpm
+          - image: archlinux:latest
+            install: tar -xzf /dist/*.tar.gz -C /usr/local --strip-components=1
+          - image: alpine:3.22
+            install: tar -xzf /dist/*.tar.gz -C /usr/local --strip-components=1
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: packages-${{ matrix.arch }}
+          path: dist
+
+      - name: Install package and run the daemon
+        env:
+          IMAGE: ${{ matrix.image }}
+          INSTALL: ${{ matrix.install }}
+        run: |
+          docker run --rm -v "$PWD/dist:/dist:ro" "$IMAGE" sh -euc "
+            $INSTALL
+            pominal --help | grep -q USAGE
+            pominal start
+            pominal status | grep -q focus
+            pominal --stop-daemon
+          "
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - macos
+      - smoke-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: dist
+
+      - name: Verify tag matches project version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! ls "dist/pominal-${version}-linux-"*.tar.gz > /dev/null 2>&1; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match the project version in CMakeLists.txt"
+            exit 1
+          fi
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum pominal* > SHA256SUMS
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" dist/*
+          --repo "$GITHUB_REPOSITORY"
+          --title "$GITHUB_REF_NAME"
+          --generate-notes
+          --verify-tag

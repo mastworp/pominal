@@ -1,0 +1,16 @@
+name: Fedora toolchain
+description: Builds the toolchain stage of the Dockerfile and loads it as the pominal-toolchain image
+
+runs:
+  using: composite
+  steps:
+    - uses: docker/setup-buildx-action@v4
+
+    - uses: docker/build-push-action@v7
+      with:
+        context: .
+        target: toolchain
+        tags: pominal-toolchain
+        load: true
+        cache-from: type=gha,scope=toolchain-${{ runner.arch }}
+        cache-to: type=gha,scope=toolchain-${{ runner.arch }},mode=max,ignore-error=true
