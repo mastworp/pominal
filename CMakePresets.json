@@ -1,0 +1,268 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "base",
+      "installDir": "$env{HOME}/.local",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Coverage",
+      "inherits": "debug",
+      "cacheVariables": {
+        "POMINAL_ENABLE_COVERAGE": "ON"
+      }
+    },
+    {
+      "name": "package",
+      "displayName": "Package (static Linux release)",
+      "inherits": "release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "POMINAL_STATIC_LINK": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage"
+    },
+    {
+      "name": "package",
+      "configurePreset": "package"
+    },
+    {
+      "name": "install",
+      "configurePreset": "release",
+      "targets": [
+        "install"
+      ]
+    },
+    {
+      "name": "coverage-report",
+      "configurePreset": "coverage",
+      "targets": [
+        "coverage"
+      ]
+    },
+    {
+      "name": "format",
+      "configurePreset": "debug",
+      "targets": [
+        "format"
+      ]
+    },
+    {
+      "name": "format-check",
+      "configurePreset": "debug",
+      "targets": [
+        "format-check"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "base",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "configurePreset": "release"
+    },
+    {
+      "name": "coverage",
+      "inherits": "base",
+      "configurePreset": "coverage"
+    },
+    {
+      "name": "package",
+      "inherits": "base",
+      "configurePreset": "package"
+    }
+  ],
+  "packagePresets": [
+    {
+      "name": "package",
+      "configurePreset": "package",
+      "generators": [
+        "TGZ",
+        "DEB",
+        "RPM"
+      ]
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "debug",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug"
+        },
+        {
+          "type": "build",
+          "name": "debug"
+        },
+        {
+          "type": "test",
+          "name": "debug"
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "release"
+        },
+        {
+          "type": "build",
+          "name": "release"
+        },
+        {
+          "type": "test",
+          "name": "release"
+        }
+      ]
+    },
+    {
+      "name": "install",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "release"
+        },
+        {
+          "type": "build",
+          "name": "release"
+        },
+        {
+          "type": "test",
+          "name": "release"
+        },
+        {
+          "type": "build",
+          "name": "install"
+        }
+      ]
+    },
+    {
+      "name": "coverage",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "coverage"
+        },
+        {
+          "type": "build",
+          "name": "coverage"
+        },
+        {
+          "type": "test",
+          "name": "coverage"
+        },
+        {
+          "type": "build",
+          "name": "coverage-report"
+        }
+      ]
+    },
+    {
+      "name": "package",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "package"
+        },
+        {
+          "type": "build",
+          "name": "package"
+        },
+        {
+          "type": "test",
+          "name": "package"
+        },
+        {
+          "type": "package",
+          "name": "package"
+        }
+      ]
+    },
+    {
+      "name": "format",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug"
+        },
+        {
+          "type": "build",
+          "name": "format"
+        }
+      ]
+    },
+    {
+      "name": "format-check",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug"
+        },
+        {
+          "type": "build",
+          "name": "format-check"
+        }
+      ]
+    }
+  ]
+}
