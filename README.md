@@ -1,5 +1,7 @@
 # Pominal
 
+[![CI](https://github.com/mastworp/pominal/actions/workflows/ci.yml/badge.svg)](https://github.com/mastworp/pominal/actions/workflows/ci.yml)
+
 A terminal-based Pomodoro timer service written in modern C++23.
 
 ## Features
@@ -36,15 +38,15 @@ cmake --build --preset release
 ctest --preset release
 ```
 
-| Workflow preset | What it does |
-|-----------------|--------------|
-| `debug` | Debug build and tests |
-| `release` | Release build and tests |
-| `install` | Release build and tests, then installs into `~/.local` |
-| `coverage` | Instrumented build, tests, coverage report and minimum coverage check |
-| `package` | Static release build, tests and `.tar.gz`, `.deb` and `.rpm` packages (Linux only) |
-| `format` | Formats all C++ and CMake sources |
-| `format-check` | Fails when a source file is not formatted |
+| Workflow preset | What it does                                                                       |
+|-----------------|------------------------------------------------------------------------------------|
+| `debug`         | Debug build and tests                                                              |
+| `release`       | Release build and tests                                                            |
+| `install`       | Release build and tests, then installs into `~/.local`                             |
+| `coverage`      | Instrumented build, tests, coverage report and minimum coverage check              |
+| `package`       | Static release build, tests and `.tar.gz`, `.deb` and `.rpm` packages (Linux only) |
+| `format`        | Formats all C++ and CMake sources                                                  |
+| `format-check`  | Fails when a source file is not formatted                                          |
 
 ## Installation
 
@@ -54,6 +56,7 @@ sudo cmake --install build/release --prefix /usr/local    # system-wide, after a
 ```
 
 Or add an alias to `~/.zshrc` or `~/.bashrc`:
+
 ```bash
 alias pominal="/path/to/pominal/build/release/pominal"
 ```
@@ -115,16 +118,16 @@ pominal -f 30 -s 10 -l 20 -d   # 30min focus, 10min short, 20min long
 
 ### Options
 
-| Option | Description |
-|--------|-------------|
-| `-h, --help` | Show help message |
-| `-d, --daemon` | Start the background service |
-| `--stop-daemon` | Stop the background service |
-| `--foreground` | Run service in foreground |
-| `-f, --focus-time <min>` | Focus duration in minutes (default: 25) |
+| Option                    | Description                                  |
+|---------------------------|----------------------------------------------|
+| `-h, --help`              | Show help message                            |
+| `-d, --daemon`            | Start the background service                 |
+| `--stop-daemon`           | Stop the background service                  |
+| `--foreground`            | Run service in foreground                    |
+| `-f, --focus-time <min>`  | Focus duration in minutes (default: 25)      |
 | `-s, --short-break <min>` | Short break duration in minutes (default: 5) |
-| `-l, --long-break <min>` | Long break duration in minutes (default: 15) |
-| `-i, --intervals <n>` | Intervals before long break (default: 4) |
+| `-l, --long-break <min>`  | Long break duration in minutes (default: 15) |
+| `-i, --intervals <n>`     | Intervals before long break (default: 4)     |
 
 ### Typical Workflow
 
@@ -197,6 +200,7 @@ pominal/
 #### 1. Timer (`include/timer.hpp`)
 
 The heart of the application:
+
 - State machine with states: `idle`, `focus`, `short_break`, `long_break`, `paused`
 - Runs in dedicated thread (`timer_loop()`)
 - Uses `steady_clock` for accurate time measurement
@@ -219,9 +223,9 @@ The heart of the application:
 
 - `service.cpp`: Runs the main loop accepting client connections
 - `daemon.cpp`: Double-fork daemonization (classic Unix pattern)
-  - First fork: parent exits, child becomes orphan
-  - `setsid()`: Creates new session
-  - Second fork: Prevents reacquiring a controlling terminal
+    - First fork: parent exits, child becomes orphan
+    - `setsid()`: Creates new session
+    - Second fork: Prevents reacquiring a controlling terminal
 
 ### Data Flow
 
@@ -273,18 +277,19 @@ The heart of the application:
 
 ### Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| Unix domain socket | Fast IPC, works across terminals, simple cleanup |
-| Double-fork daemon | Prevents zombie processes, detaches from terminal |
-| Command pattern | Open/closed principle - add new commands without modifying existing code |
-| State machine timer | Clear transitions, easy to reason about |
-| `steady_clock` timing | Immune to system clock changes, accurate intervals |
-| `fork()`/`execlp()` for sound | Avoids blocking daemon, cleaner than `std::system()` |
+| Decision                      | Rationale                                                                |
+|-------------------------------|--------------------------------------------------------------------------|
+| Unix domain socket            | Fast IPC, works across terminals, simple cleanup                         |
+| Double-fork daemon            | Prevents zombie processes, detaches from terminal                        |
+| Command pattern               | Open/closed principle - add new commands without modifying existing code |
+| State machine timer           | Clear transitions, easy to reason about                                  |
+| `steady_clock` timing         | Immune to system clock changes, accurate intervals                       |
+| `fork()`/`execlp()` for sound | Avoids blocking daemon, cleaner than `std::system()`                     |
 
 ### Thread Safety
 
 The timer uses the **monitor pattern**:
+
 - Single mutex (`mutex_`) protects all state
 - Condition variable (`cv_`) for efficient waiting
 - Callbacks invoked with lock released to prevent deadlocks
@@ -303,6 +308,7 @@ ctest --preset debug -R timer_test
 ```
 
 Test suites:
+
 - `timer_test`: Timer state machine and transitions
 - `protocol_test`: IPC serialization/deserialization
 - `command_test`: Command pattern and factory
@@ -314,7 +320,8 @@ Test suites:
 cmake --workflow --preset coverage
 ```
 
-The `coverage` preset instruments the library and tests with gcov and generates an HTML, Cobertura XML and Markdown report with gcovr in `build/coverage/coverage-report`. The build fails when line coverage drops below `POMINAL_COVERAGE_MIN_LINES` (default `40`), which CI enforces on every push and pull request. Raise it as tests are added:
+The `coverage` preset instruments the library and tests with gcov and generates an HTML, Cobertura XML and Markdown report with gcovr in `build/coverage/coverage-report`. The build fails when line coverage drops below `POMINAL_COVERAGE_MIN_LINES`
+(default `40`), which CI enforces on every push and pull request. Raise it as tests are added:
 
 ```bash
 cmake --preset coverage -DPOMINAL_COVERAGE_MIN_LINES=50
@@ -335,12 +342,12 @@ cmake-format does not run on Python 3.15 or newer, which is why the toolchain in
 
 The `Dockerfile` is based on Fedora 45 and has four targets:
 
-| Target | Contents |
-|--------|----------|
-| `toolchain` | GCC, CMake, Ninja, clang-format, cmake-format, gcovr and rpmbuild |
-| `build` | Builds, tests and packages the sources |
-| `artifacts` | Only the packages, for export with `--output` |
-| `runtime` | Fedora with the pominal RPM installed, running the service in the foreground |
+| Target      | Contents                                                                     |
+|-------------|------------------------------------------------------------------------------|
+| `toolchain` | GCC, CMake, Ninja, clang-format, cmake-format, gcovr and rpmbuild            |
+| `build`     | Builds, tests and packages the sources                                       |
+| `artifacts` | Only the packages, for export with `--output`                                |
+| `runtime`   | Fedora with the pominal RPM installed, running the service in the foreground |
 
 ```bash
 docker compose run --rm dev                                        # shell in the toolchain, sources mounted at /workspace
@@ -357,15 +364,15 @@ The `dev` service keeps its build trees in a named volume so they do not clash w
 
 `.github/workflows/ci.yml` runs on pushes to `master`, pull requests and `v*` tags:
 
-| Job | Purpose |
-|-----|---------|
-| Format | `format-check` workflow in the Fedora toolchain |
-| Build & test (Fedora, GCC) | `release` workflow in the Fedora toolchain |
-| Build & test (macOS, Apple Clang) | `release` workflow on `macos-latest` |
-| Coverage | `coverage` workflow including the minimum coverage check, uploads the HTML report and adds a summary to the run |
-| Package | Builds the static packages from the `Dockerfile` on x86_64 and arm64 runners, checks the runtime image and uploads the packages |
-| Install on ... | Installs the packages on Debian, Ubuntu, Fedora, AlmaLinux, openSUSE and Alpine on both architectures, plus Arch Linux on x86_64, and runs a daemon round trip |
-| Release | On `v*` tags, checks that the tag matches the project version and publishes the packages of both architectures with `SHA256SUMS` as a GitHub release |
+| Job                               | Purpose                                                                                                                                                        |
+|-----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Format                            | `format-check` workflow in the Fedora toolchain                                                                                                                |
+| Build & test (Fedora, GCC)        | `release` workflow in the Fedora toolchain                                                                                                                     |
+| Build & test (macOS, Apple Clang) | `release` workflow on `macos-latest`                                                                                                                           |
+| Coverage                          | `coverage` workflow including the minimum coverage check, uploads the HTML report and adds a summary to the run                                                |
+| Package                           | Builds the static packages from the `Dockerfile` on x86_64 and arm64 runners, checks the runtime image and uploads the packages                                |
+| Install on ...                    | Installs the packages on Debian, Ubuntu, Fedora, AlmaLinux, openSUSE and Alpine on both architectures, plus Arch Linux on x86_64, and runs a daemon round trip |
+| Release                           | On `v*` tags, checks that the tag matches the project version and publishes the packages of both architectures with `SHA256SUMS` as a GitHub release           |
 
 The coverage report and package artifacts of each run are kept for 7 days. Released packages stay on the releases page.
 
