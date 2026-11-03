@@ -1,14 +1,15 @@
 #include "client.hpp"
-#include "parser.hpp"
 #include "daemon.hpp"
-#include "service.hpp"
 #include "display.hpp"
+#include "parser.hpp"
+#include "service.hpp"
 #include <iostream>
 
 auto main(const int argc, char* argv[]) -> int {
     using namespace pominal;
 
-    auto [command, config, extra_args, show_help, daemon_mode, stop_daemon, foreground_mode] = cli::argument_parser::parse(argc, argv);
+    auto [command, config, extra_args, show_help, daemon_mode, stop_daemon, foreground_mode] =
+        cli::argument_parser::parse(argc, argv);
 
     if (show_help) {
         cli::argument_parser::print_help();
@@ -17,26 +18,22 @@ auto main(const int argc, char* argv[]) -> int {
 
     if (stop_daemon) {
         if (daemon::daemon_launcher::stop()) {
-            std::cout << notification::display::colors::green
-                      << "Daemon stopped successfully"
+            std::cout << notification::display::colors::green << "Daemon stopped successfully"
                       << notification::display::colors::reset << "\n";
             return 0;
         }
-        std::cerr << notification::display::colors::red
-                  << "Failed to stop daemon (not running?)"
+        std::cerr << notification::display::colors::red << "Failed to stop daemon (not running?)"
                   << notification::display::colors::reset << "\n";
         return 1;
     }
 
     if (foreground_mode) {
         if (daemon::service::is_running()) {
-            std::cerr << notification::display::colors::red
-                      << "Another instance is already running"
+            std::cerr << notification::display::colors::red << "Another instance is already running"
                       << notification::display::colors::reset << "\n";
             return 1;
         }
-        std::cout << notification::display::colors::green
-                  << "Starting service in foreground..."
+        std::cout << notification::display::colors::green << "Starting service in foreground..."
                   << notification::display::colors::reset << "\n";
         daemon::service svc{config};
         return svc.run();
@@ -44,26 +41,22 @@ auto main(const int argc, char* argv[]) -> int {
 
     if (daemon_mode) {
         if (daemon::service::is_running()) {
-            std::cout << notification::display::colors::yellow
-                      << "Daemon is already running"
+            std::cout << notification::display::colors::yellow << "Daemon is already running"
                       << notification::display::colors::reset << "\n";
             return 0;
         }
         if (daemon::daemon_launcher::start(config)) {
-            std::cout << notification::display::colors::green
-                      << "Daemon started successfully"
+            std::cout << notification::display::colors::green << "Daemon started successfully"
                       << notification::display::colors::reset << "\n";
             return 0;
         }
-        std::cerr << notification::display::colors::red
-                  << "Failed to start daemon"
+        std::cerr << notification::display::colors::red << "Failed to start daemon"
                   << notification::display::colors::reset << "\n";
         return 1;
     }
 
     if (!daemon::daemon_launcher::ensure_running(config)) {
-        std::cerr << notification::display::colors::red
-                  << "Failed to start daemon service"
+        std::cerr << notification::display::colors::red << "Failed to start daemon service"
                   << notification::display::colors::reset << "\n";
         return 1;
     }
