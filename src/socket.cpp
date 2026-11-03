@@ -1,4 +1,5 @@
 #include "socket.hpp"
+#include <cstring>
 #include <filesystem>
 #include <sys/socket.h>
 #include <sys/un.h>

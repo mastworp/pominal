@@ -1,6 +1,6 @@
 #include "daemon.hpp"
-#include "service.hpp"
 #include "protocol.hpp"
+#include "service.hpp"
 #include "socket.hpp"
 #include <csignal>
 #include <cstdlib>

@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 #include "timer.hpp"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <chrono>
 #include <thread>
 

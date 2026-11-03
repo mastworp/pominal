@@ -1,10 +1,11 @@
 #include "client.hpp"
-#include "socket.hpp"
 #include "display.hpp"
+#include "socket.hpp"
 
 namespace pominal::cli {
 
-auto client::send_command(const command_type cmd, const std::vector<std::string>& args) -> std::optional<ipc::response> {
+auto client::send_command(const command_type cmd, const std::vector<std::string>& args)
+    -> std::optional<ipc::response> {
     ipc::client_socket socket{};
     if (!socket.connect_to_server()) {
         return std::nullopt;

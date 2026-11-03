@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include "protocol.hpp"
+#include <gtest/gtest.h>
 
 using namespace pominal;
 using namespace pominal::ipc;
@@ -98,7 +98,7 @@ TEST_F(protocol_test, all_command_types_serialize_correctly) {
         command_type::short_break,
         command_type::long_break,
         command_type::interval,
-        command_type::shutdown
+        command_type::shutdown,
     };
 
     for (auto cmd : commands) {
@@ -117,7 +117,7 @@ TEST_F(protocol_test, all_timer_states_serialize_correctly) {
         timer_state::focus,
         timer_state::short_break,
         timer_state::long_break,
-        timer_state::paused
+        timer_state::paused,
     };
 
     for (auto state : states) {

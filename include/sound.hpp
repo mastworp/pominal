@@ -35,7 +35,7 @@ public:
     }
 
 private:
-    static auto play_system_sound(const std::string& sound_name) -> void {
+    static auto play_system_sound([[maybe_unused]] const std::string& sound_name) -> void {
         if (const auto pid = fork(); pid == 0) {
 #ifdef __APPLE__
             const auto path = "/System/Library/Sounds/" + sound_name + ".aiff";

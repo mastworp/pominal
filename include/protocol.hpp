@@ -57,14 +57,10 @@ struct response {
 
     [[nodiscard]] auto serialize() const -> std::string {
         std::ostringstream oss;
-        oss << (success ? "1" : "0") << "|"
-            << message << "|"
-            << static_cast<int>(status.state) << "|"
-            << static_cast<int>(status.previous_state) << "|"
-            << status.remaining.count() << "|"
-            << status.total.count() << "|"
-            << static_cast<int>(status.current_interval) << "|"
-            << static_cast<int>(status.total_intervals) << "\n";
+        oss << (success ? "1" : "0") << "|" << message << "|" << static_cast<int>(status.state) << "|"
+            << static_cast<int>(status.previous_state) << "|" << status.remaining.count() << "|" << status.total.count()
+            << "|" << static_cast<int>(status.current_interval) << "|" << static_cast<int>(status.total_intervals)
+            << "\n";
         return oss.str();
     }
 

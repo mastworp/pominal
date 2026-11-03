@@ -46,11 +46,16 @@ struct timer_status {
 
 inline auto state_to_string(const timer_state state) -> std::string {
     switch (state) {
-        case timer_state::idle: return "idle";
-        case timer_state::focus: return "focus";
-        case timer_state::short_break: return "short_break";
-        case timer_state::long_break: return "long_break";
-        case timer_state::paused: return "paused";
+        case timer_state::idle:
+            return "idle";
+        case timer_state::focus:
+            return "focus";
+        case timer_state::short_break:
+            return "short_break";
+        case timer_state::long_break:
+            return "long_break";
+        case timer_state::paused:
+            return "paused";
     }
     return "unknown";
 }

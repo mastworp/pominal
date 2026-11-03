@@ -4,8 +4,7 @@ namespace pominal {
 
 timer::timer(const timer_config& config)
     : config_{config}
-      , running_{true}
-{
+    , running_{true} {
     status_.total_intervals = config_.intervals_before_long_break;
     timer_thread_ = std::thread{&timer::timer_loop, this};
 }

@@ -9,7 +9,8 @@ namespace pominal::cli {
 
 class client {
 public:
-    [[nodiscard]] static auto send_command(command_type cmd, const std::vector<std::string>& args = {}) -> std::optional<ipc::response>;
+    [[nodiscard]] static auto send_command(command_type cmd, const std::vector<std::string>& args = {})
+        -> std::optional<ipc::response>;
     [[nodiscard]] static auto start() -> bool;
     [[nodiscard]] static auto pause() -> bool;
     [[nodiscard]] static auto stop() -> bool;

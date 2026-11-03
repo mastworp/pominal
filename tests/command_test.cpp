@@ -1,7 +1,7 @@
-#include <gtest/gtest.h>
 #include "command.hpp"
 #include "factory.hpp"
 #include "timer.hpp"
+#include <gtest/gtest.h>
 
 using namespace pominal;
 using namespace pominal::command;
